@@ -1,477 +1,694 @@
-/* =========================================
-   CHARITY HUB - MAIN DASHBOARD
-   ========================================= */
+<?php
+// =============================================
+// CHARITY HUB - MAIN DASHBOARD
+// =============================================
 
-/* General settings */
-* {
-    box-sizing: border-box;
+require_once "db.php";
+
+
+// =============================================
+// 1. TOTAL DONATION AMOUNT
+// =============================================
+
+$totalResult = $conn->query(
+    "SELECT COALESCE(SUM(amount), 0) AS total
+     FROM donations"
+);
+
+if (!$totalResult) {
+    die("Unable to load donation total: " . $conn->error);
 }
 
-body {
-    margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
-    background: #f4f7f6;
-    color: #263238;
+$totalRow = $totalResult->fetch_assoc();
+$totalAmount = (float)$totalRow["total"];
+
+
+// =============================================
+// 2. TOTAL NUMBER OF DONATIONS
+// =============================================
+
+$countResult = $conn->query(
+    "SELECT COUNT(*) AS total_count
+     FROM donations"
+);
+
+if (!$countResult) {
+    die("Unable to count donations: " . $conn->error);
 }
 
-.dashboard-container {
-    display: flex;
-    min-height: 100vh;
+$totalDonationsCount = (int)$countResult
+    ->fetch_assoc()["total_count"];
+
+
+// =============================================
+// 3. TOTAL REGISTERED DONORS
+// =============================================
+
+$donorCountResult = $conn->query(
+    "SELECT COUNT(*) AS total_donors
+     FROM donors"
+);
+
+if (!$donorCountResult) {
+    die("Unable to count donors: " . $conn->error);
 }
 
-/* SIDEBAR */
-.sidebar {
-    width: 250px;
-    min-width: 250px;
-    background: #145c3b;
-    color: white;
-    padding: 25px 15px;
-    display: flex;
-    flex-direction: column;
+$totalDonors = (int)$donorCountResult
+    ->fetch_assoc()["total_donors"];
+
+
+// =============================================
+// 4. TOTAL REGISTERED BENEFICIARIES
+// =============================================
+
+$beneficiaryCountResult = $conn->query(
+    "SELECT COUNT(*) AS total_beneficiaries
+     FROM beneficiaries"
+);
+
+if (!$beneficiaryCountResult) {
+    die("Unable to count beneficiaries: " . $conn->error);
 }
 
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 35px;
+$totalBeneficiaries = (int)$beneficiaryCountResult
+    ->fetch_assoc()["total_beneficiaries"];
+
+
+// =============================================
+// 5. TOTAL ONGOING PROJECTS
+// =============================================
+
+$projectCountResult = $conn->query(
+    "SELECT COUNT(*) AS total_projects
+     FROM projects
+     WHERE status = 'Ongoing'"
+);
+
+if (!$projectCountResult) {
+    die("Unable to count projects: " . $conn->error);
 }
 
-.logo-icon {
-    font-size: 30px;
-    color: #8ce0ad;
+$totalActiveProjects = (int)$projectCountResult
+    ->fetch_assoc()["total_projects"];
+
+
+// =============================================
+// 6. FOUR MOST RECENT DONATIONS
+// =============================================
+
+$donationResult = $conn->query(
+    "SELECT donor_name, amount, donation_date, status
+     FROM donations
+     ORDER BY id DESC
+     LIMIT 4"
+);
+
+if (!$donationResult) {
+    die("Unable to load recent donations: " . $conn->error);
 }
 
-.menu-heading {
-    color: #b7d9c6;
-    font-size: 11px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    margin: 20px 10px 12px;
+$donations = [];
+
+while ($row = $donationResult->fetch_assoc()) {
+    $donations[] = $row;
 }
 
-.navigation {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.nav-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 13px 12px;
-    color: #ecf6ef;
-    text-decoration: none;
-    border-radius: 7px;
-    font-size: 14px;
-    transition: background 0.2s;
-}
-
-.nav-link span {
-    width: 23px;
-    text-align: center;
-}
-
-.nav-link:hover,
-.nav-link.active {
-    background: #26794f;
-    color: white;
-}
-
-.sidebar-footer {
-    margin-top: auto;
-    padding: 25px 10px 5px;
-    color: #d5eadc;
-    font-size: 13px;
-}
-
-.sidebar-footer p {
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.sidebar-footer small {
-    font-size: 11px;
-}
-
-/* MAIN CONTENT */
-.main-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.topbar {
-    min-height: 95px;
-    background: white;
-    padding: 20px 30px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    border-bottom: 1px solid #e6ece8;
-}
-
-.topbar h2 {
-    margin: 0 0 6px;
-    font-size: 23px;
-    color: #245b40;
-}
-
-.welcome-text {
-    margin: 0;
-    color: #7b8780;
-    font-size: 13px;
-}
-
-.admin-profile {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.profile-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: #d9f1e2;
-    color: #176b45;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-}
-
-.admin-profile strong,
-.admin-profile small {
-    display: block;
-}
-
-.admin-profile strong {
-    font-size: 13px;
-}
-
-.admin-profile small {
-    color: #7b8780;
-    margin-top: 4px;
-    font-size: 11px;
-}
-
-.menu-toggle {
-    display: none;
-    background: #176b45;
-    color: white;
-    border: none;
-    padding: 10px 13px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-/* PAGE CONTENT */
-.content {
-    padding: 30px;
-}
-
-.page-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 25px;
-}
-
-.page-heading h1 {
-    margin: 0 0 8px;
-    color: #245b40;
-    font-size: 27px;
-}
-
-.page-heading p {
-    margin: 0;
-    color: #7b8780;
-    font-size: 14px;
-}
-
-.today-date {
-    background: white;
-    border: 1px solid #e0e9e3;
-    padding: 12px 16px;
-    border-radius: 7px;
-    font-size: 13px;
-    color: #52675a;
-}
-
-/* STATISTICS CARDS */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-}
-
-.stat-card {
-    background: white;
-    border-radius: 10px;
-    padding: 22px;
-    border: 1px solid #e8eee9;
-    box-shadow: 0 3px 10px rgba(30, 70, 45, 0.04);
-}
-
-.stat-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.stat-title {
-    color: #6d7c72;
-    font-size: 13px;
-}
-
-.stat-icon {
-    background: #e4f5e9;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 21px;
-}
-
-.stat-card h2 {
-    color: #176b45;
-    font-size: 25px;
-    margin: 20px 0 10px;
-    overflow-wrap: anywhere;
-}
-
-.stat-card p {
-    color: #849188;
-    font-size: 12px;
-    margin: 0;
-}
-
-/* LOWER DASHBOARD SECTIONS */
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.7fr) minmax(250px, 1fr);
-    gap: 22px;
-    align-items: start;
-}
-
-.panel {
-    background: white;
-    border: 1px solid #e7ede8;
-    border-radius: 10px;
-    padding: 22px;
-    min-width: 0;
-    box-shadow: 0 3px 10px rgba(30, 70, 45, 0.04);
-}
-
-.panel-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 20px;
-}
-
-.panel-heading h3 {
-    color: #245b40;
-    font-size: 17px;
-    margin: 0 0 7px;
-}
-
-.panel-heading p {
-    color: #849188;
-    font-size: 12px;
-    margin: 0;
-}
-
-/* VIEW ALL BUTTON */
-.view-button {
-    background: #e5f4e9;
-    color: #176b45;
-    border: none;
-    padding: 10px 14px;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.view-button:hover {
-    background: #ccebd6;
-}
-
-/* DONATIONS TABLE */
-.table-container {
-    width: 100%;
-    overflow-x: auto;
-}
-
-.table-container table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-}
-
-.table-container th {
-    background: #f1f7f3;
-    color: #64766a;
-    font-size: 12px;
-    font-weight: bold;
-    padding: 13px 10px;
-    white-space: nowrap;
-}
-
-.table-container td {
-    padding: 15px 10px;
-    border-bottom: 1px solid #edf1ee;
-    font-size: 12px;
-}
-
-.table-container tr:last-child td {
-    border-bottom: none;
-}
-
-/* DONATION STATUS */
-.status {
-    display: inline-block;
-    padding: 6px 9px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: bold;
-}
-
-.status.completed {
-    background: #dcf5e5;
-    color: #197143;
-}
-
-.status.pending {
-    background: #fff0cf;
-    color: #966400;
-}
-
-/* RECENT ACTIVITIES */
-.activity-list {
-    display: flex;
-    flex-direction: column;
-}
-
-.activity-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 15px 0;
-    border-bottom: 1px solid #edf1ee;
-}
-
-.activity-item:last-child {
-    border-bottom: none;
-}
-
-.activity-dot {
-    width: 10px;
-    height: 10px;
-    min-width: 10px;
-    margin-top: 5px;
-    background: #36a66b;
-    border-radius: 50%;
-}
-
-.activity-item p {
-    margin: 0;
-    color: #59685e;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-/* FOOTER */
-.footer {
-    margin-top: 30px;
-    padding: 20px 0;
-    text-align: center;
-    color: #89958d;
-    font-size: 12px;
-}
-
-/* MOBILE AND TABLET DISPLAY */
-@media (max-width: 1100px) {
-    .stats-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .dashboard-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 700px) {
-    .dashboard-container {
-        display: block;
-    }
-
-    .sidebar {
-        display: none;
-        width: 100%;
-        min-width: 0;
-    }
-
-    .sidebar.open {
-        display: flex;
-    }
-
-    .menu-toggle {
-        display: block;
-    }
-
-    .topbar {
-        padding: 15px;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-    }
-
-    .topbar h2 {
-        font-size: 19px;
-    }
-
-    .admin-profile {
-        margin-left: auto;
-    }
-
-    .content {
-        padding: 18px 12px;
-    }
-
-    .page-heading h1 {
-        font-size: 23px;
-    }
-
-    .stats-grid {
-        gap: 12px;
-    }
-
-    .stat-card {
-        padding: 15px;
-    }
-
-    .stat-card h2 {
-        font-size: 20px;
-    }
-
-    .panel {
-        padding: 15px;
-    }
-}
-
-@media (max-width: 380px) {
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .admin-profile strong {
-        font-size: 11px;
-    }
-}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CHARITY HUB | Dashboard</title>
+
+    <!-- DASHBOARD CSS -->
+    <link rel="stylesheet" href="css/dashboard.css">
+
+</head>
+
+<body>
+
+<div class="dashboard-container">
+
+
+    <!-- =====================================
+         SIDEBAR
+    ====================================== -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+
+            <span class="logo-icon">❤</span>
+
+            <span>CHARITY HUB</span>
+
+        </div>
+
+
+        <p class="menu-heading">MAIN MENU</p>
+
+
+        <nav class="navigation">
+
+            <a href="index.php" class="nav-link active">
+                <span>⌂</span>
+                Dashboard
+            </a>
+
+            <a href="donations.php" class="nav-link">
+                <span>♥</span>
+                Donations
+            </a>
+
+            <a href="donors.php" class="nav-link">
+                <span>♙</span>
+                Donors
+            </a>
+
+            <a href="beneficiaries.php" class="nav-link">
+                <span>♧</span>
+                Beneficiaries
+            </a>
+
+            <a href="projects.php" class="nav-link">
+                <span>▣</span>
+                Projects
+            </a>
+
+            <a href="volunteers.php" class="nav-link">
+                <span>♧</span>
+                Volunteers
+            </a>
+
+            <a href="reports.php" class="nav-link">
+                <span>▤</span>
+                Reports
+            </a>
+
+            <a href="settings.php" class="nav-link">
+                <span>⚙</span>
+                Settings
+            </a>
+
+            <a href="users.php" class="nav-link">
+                <span>♙</span>
+                User Management
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <p>CHARITY HUB</p>
+
+            <small>Making a difference together.</small>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- =====================================
+         MAIN CONTENT
+    ====================================== -->
+
+    <main class="main-content">
+
+
+        <!-- TOPBAR -->
+
+        <header class="topbar">
+
+            <div>
+
+                <h2>CHARITY HUB</h2>
+
+                <p class="welcome-text">
+                    Charity Management System
+                </p>
+
+            </div>
+
+
+            <div class="admin-profile">
+
+                <div class="profile-icon">
+                    A
+                </div>
+
+                <div>
+
+                    <strong>Administrator</strong>
+
+                    <small>System Admin</small>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- =====================================
+             DASHBOARD CONTENT
+        ====================================== -->
+
+        <section class="content">
+
+
+            <!-- PAGE HEADING -->
+
+            <div class="page-heading">
+
+                <div>
+
+                    <h1>Dashboard Overview</h1>
+
+                    <p>
+                        Welcome back! Here is what is happening
+                        in your charity organization.
+                    </p>
+
+                </div>
+
+
+                <div class="today-date">
+
+                    <?php echo date("d M Y"); ?>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =====================================
+                 STATISTICS CARDS
+            ====================================== -->
+
+            <div class="stats-grid">
+
+
+                <!-- TOTAL DONATIONS -->
+
+                <div class="stat-card">
+
+                    <div class="stat-top">
+
+                        <span class="stat-title">
+                            Total Donations
+                        </span>
+
+                        <span class="stat-icon">
+                            ♥
+                        </span>
+
+                    </div>
+
+                    <h2>
+                        KSh <?php
+                        echo number_format($totalAmount, 2);
+                        ?>
+                    </h2>
+
+                    <p>
+                        <?php echo number_format($totalDonationsCount); ?>
+                        donation records
+                    </p>
+
+                </div>
+
+
+
+                <!-- TOTAL DONORS -->
+
+                <div class="stat-card">
+
+                    <div class="stat-top">
+
+                        <span class="stat-title">
+                            Total Donors
+                        </span>
+
+                        <span class="stat-icon">
+                            ♙
+                        </span>
+
+                    </div>
+
+                    <h2>
+                        <?php echo number_format($totalDonors); ?>
+                    </h2>
+
+                    <p>
+                        Registered donors
+                    </p>
+
+                </div>
+
+
+
+                <!-- TOTAL BENEFICIARIES -->
+
+                <div class="stat-card">
+
+                    <div class="stat-top">
+
+                        <span class="stat-title">
+                            Beneficiaries
+                        </span>
+
+                        <span class="stat-icon">
+                            ♧
+                        </span>
+
+                    </div>
+
+                    <h2>
+                        <?php echo number_format($totalBeneficiaries); ?>
+                    </h2>
+
+                    <p>
+                        Registered beneficiaries
+                    </p>
+
+                </div>
+
+
+
+                <!-- ACTIVE PROJECTS -->
+
+                <div class="stat-card">
+
+                    <div class="stat-top">
+
+                        <span class="stat-title">
+                            Active Projects
+                        </span>
+
+                        <span class="stat-icon">
+                            ▣
+                        </span>
+
+                    </div>
+
+                    <h2>
+                        <?php echo number_format($totalActiveProjects); ?>
+                    </h2>
+
+                    <p>
+                        Ongoing charity projects
+                    </p>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- =====================================
+                 DASHBOARD LOWER SECTION
+            ====================================== -->
+
+            <div class="dashboard-grid">
+
+
+                <!-- RECENT DONATIONS TABLE -->
+
+                <section class="panel">
+
+
+                    <div class="panel-heading">
+
+                        <div>
+
+                            <h3>Recent Donations</h3>
+
+                            <p>
+                                Overview of the latest donations
+                            </p>
+
+                        </div>
+
+
+                        <a href="donations.php">
+
+                            <button
+                                class="view-button"
+                                type="button"
+                            >
+                                View All
+                            </button>
+
+                        </a>
+
+                    </div>
+
+
+
+                    <div class="table-container">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Donor Name</th>
+
+                                    <th>Amount</th>
+
+                                    <th>Date</th>
+
+                                    <th>Status</th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+                                <?php if (count($donations) > 0): ?>
+
+                                    <?php foreach ($donations as $donation): ?>
+
+                                        <tr>
+
+                                            <td>
+
+                                                <?php
+
+                                                echo htmlspecialchars(
+                                                    $donation["donor_name"] ?? "",
+                                                    ENT_QUOTES,
+                                                    "UTF-8"
+                                                );
+
+                                                ?>
+
+                                            </td>
+
+
+                                            <td>
+
+                                                KSh
+
+                                                <?php
+
+                                                echo number_format(
+                                                    (float)$donation["amount"],
+                                                    2
+                                                );
+
+                                                ?>
+
+                                            </td>
+
+
+                                            <td>
+
+                                                <?php
+
+                                                $date = $donation["donation_date"] ?? "";
+
+                                                $timestamp = strtotime($date);
+
+                                                echo $timestamp
+                                                    ? date("d M Y", $timestamp)
+                                                    : "N/A";
+
+                                                ?>
+
+                                            </td>
+
+
+                                            <td>
+
+                                                <?php
+
+                                                echo htmlspecialchars(
+                                                    $donation["status"] ?? "Pending",
+                                                    ENT_QUOTES,
+                                                    "UTF-8"
+                                                );
+
+                                                ?>
+
+                                            </td>
+
+                                        </tr>
+
+                                    <?php endforeach; ?>
+
+
+                                <?php else: ?>
+
+                                    <tr>
+
+                                        <td colspan="4">
+
+                                            No donation records available yet.
+
+                                        </td>
+
+                                    </tr>
+
+                                <?php endif; ?>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                </section>
+
+
+
+                <!-- RECENT ACTIVITIES -->
+
+                <section class="panel">
+
+
+                    <div class="panel-heading">
+
+                        <div>
+
+                            <h3>Recent Activities</h3>
+
+                            <p>
+                                Latest system activities
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="activity-list">
+
+
+                        <div class="activity-item">
+
+                            <span class="activity-dot"></span>
+
+                            <p>
+                                CHARITY HUB dashboard is ready.
+                            </p>
+
+                        </div>
+
+
+                        <div class="activity-item">
+
+                            <span class="activity-dot"></span>
+
+                            <p>
+                                Donation management is available.
+                            </p>
+
+                        </div>
+
+
+                        <div class="activity-item">
+
+                            <span class="activity-dot"></span>
+
+                            <p>
+                                Donor management is available.
+                            </p>
+
+                        </div>
+
+
+                        <div class="activity-item">
+
+                            <span class="activity-dot"></span>
+
+                            <p>
+                                Beneficiary management is available.
+                            </p>
+
+                        </div>
+
+
+                        <div class="activity-item">
+
+                            <span class="activity-dot"></span>
+
+                            <p>
+                                Project management is available.
+                            </p>
+
+                        </div>
+
+
+                    </div>
+
+
+                </section>
+
+
+            </div>
+
+
+
+            <!-- =====================================
+                 FOOTER
+            ====================================== -->
+
+            <footer class="footer">
+
+                <p>
+
+                    &copy; <?php echo date("Y"); ?>
+
+                    CHARITY HUB. All Rights Reserved.
+
+                </p>
+
+            </footer>
+
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+
+</html>

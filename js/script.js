@@ -1,75 +1,152 @@
 
-// CHARITY HUB - Dashboard JavaScript
+document.addEventListener("DOMContentLoaded", function () {
 
-// Get the sidebar
-const sidebar = document.getElementById("sidebar");
+    // Save and display records for all management forms
 
-// Get the menu button
-const menuToggle = document.getElementById("menuToggle");
+    document.querySelectorAll(".record-form").forEach(function(form) {
 
-// Get the notification box
-const notification = document.getElementById("notification");
+        const storageKey = form.dataset.key;
+        const tableBody = document.getElementById(storageKey);
 
-// Open and close the sidebar on small screens
-menuToggle.addEventListener("click", function () {
-    sidebar.classList.toggle("open");
-});
+        if (!tableBody) return;
 
-// Display a message on the screen
-function showNotification(message) {
-    notification.textContent = message;
-    notification.style.display = "block";
+        function displayRecords() {
 
-    setTimeout(function () {
-        notification.style.display = "none";
-    }, 3000);
-}
-
-// Handle sidebar navigation
-const navigationLinks = document.querySelectorAll(".nav-link");
-
-navigationLinks.forEach(function (link) {
-
-    link.addEventListener("click", function (event) {
-
-        event.preventDefault();
-
-        // Remove active style from all links
-        navigationLinks.forEach(function (item) {
-            item.classList.remove("active");
-        });
-
-        // Highlight the selected link
-        this.classList.add("active");
-
-        // Get the selected page name
-        const pageName = this.dataset.page;
-
-        if (pageName === "Dashboard") {
-            showNotification("You are viewing the Dashboard.");
-        } else {
-            showNotification(
-                pageName + " page will be developed in the next stage."
+            const records = JSON.parse(
+                localStorage.getItem(storageKey) || "[]"
             );
+
+            tableBody.replaceChildren();
+
+            if (records.length === 0) {
+                const row = document.createElement("tr");
+                const cell = document.createElement("td");
+
+                cell.colSpan = form.querySelectorAll(
+                    "input, select, textarea"
+                ).length + 1;
+
+                cell.textContent = "No records available yet.";
+                row.appendChild(cell);
+                tableBody.appendChild(row);
+
+                return;
+            }
+
+            records.forEach(function(record, index) {
+
+                const row = document.createElement("tr");
+
+                Object.values(record).forEach(function(value) {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    row.appendChild(cell);
+                });
+
+                const actionCell = document.createElement("td");
+                const deleteButton = document.createElement("button");
+
+                deleteButton.type = "button";
+                deleteButton.textContent = "Delete";
+
+                deleteButton.addEventListener("click", function() {
+
+                    if (!confirm("Are you sure you want to delete this record?")) {
+                        return;
+                    }
+
+                    records.splice(index, 1);
+
+                    localStorage.setItem(
+                        storageKey,
+                        JSON.stringify(records)
+                    );
+
+                    displayRecords();
+                });
+
+                actionCell.appendChild(deleteButton);
+                row.appendChild(actionCell);
+                tableBody.appendChild(row);
+            });
         }
 
-        // Update the heading
-        document.getElementById("pageTitle").textContent = pageName;
+        form.addEventListener("submit", function(event) {
 
-        // Close mobile menu after selection
-        sidebar.classList.remove("open");
+            event.preventDefault();
+
+            const formData = new FormData(form);
+            const record = {};
+
+            formData.forEach(function(value, key) {
+                record[key] = value.toString().trim();
+            });
+
+            const records = JSON.parse(
+                localStorage.getItem(storageKey) || "[]"
+            );
+
+            records.push(record);
+
+            localStorage.setItem(
+                storageKey,
+                JSON.stringify(records)
+            );
+
+            form.reset();
+            displayRecords();
+
+            alert("Record saved successfully!");
+        });
+
+        displayRecords();
     });
 
-});
 
-// View all donations button
-document.getElementById("viewDonations").addEventListener(
-    "click",
-    function () {
-        showNotification(
-            "The full Donations Management page is coming next."
+    // Save organization settings
+
+    const settingsForm = document.getElementById("settingsForm");
+
+    if (settingsForm) {
+
+        const fields = [
+            "orgName",
+            "orgEmail",
+            "orgPhone",
+            "orgAddress"
+        ];
+
+        const savedSettings = JSON.parse(
+            localStorage.getItem("charity_settings") || "{}"
         );
-    }
-);
 
-console.log("CHARITY HUB dashboard loaded successfully!");
+        fields.forEach(function(id) {
+            const field = document.getElementById(id);
+
+            if (savedSettings[id]) {
+                field.value = savedSettings[id];
+            }
+        });
+
+        settingsForm.addEventListener("submit", function(event) {
+
+            event.preventDefault();
+
+            const settings = {};
+
+            fields.forEach(function(id) {
+                settings[id] = document.getElementById(id).value;
+            });
+
+            localStorage.setItem(
+                "charity_settings",
+                JSON.stringify(settings)
+            );
+
+            document.getElementById("settingsMessage").textContent =
+                "Organization settings saved successfully!";
+
+        });
+    }
+
+});
