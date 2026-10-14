@@ -1,52 +1,37 @@
+
 <?php
-// =============================================
+// ==================================================
 // CHARITY HUB - MAIN DASHBOARD
-// =============================================
+// ==================================================
 
-require_once "db.php";
+require_once __DIR__ . "/db.php";
 
-
-// =============================================
-// 1. TOTAL DONATION AMOUNT
-// =============================================
+// ==================================================
+// 1. TOTAL DONATIONS AND DONATION COUNT
+// ==================================================
 
 $totalResult = $conn->query(
-    "SELECT COALESCE(SUM(amount), 0) AS total
+    "SELECT
+        COALESCE(SUM(amount), 0) AS total,
+        COUNT(*) AS total_count
      FROM donations"
 );
 
 if (!$totalResult) {
-    die("Unable to load donation total: " . $conn->error);
+    die("Unable to load donation information: " . $conn->error);
 }
 
-$totalRow = $totalResult->fetch_assoc();
-$totalAmount = (float)$totalRow["total"];
+$donationData = $totalResult->fetch_assoc();
 
+$totalAmount = (float)$donationData["total"];
+$totalDonationsCount = (int)$donationData["total_count"];
 
-// =============================================
-// 2. TOTAL NUMBER OF DONATIONS
-// =============================================
-
-$countResult = $conn->query(
-    "SELECT COUNT(*) AS total_count
-     FROM donations"
-);
-
-if (!$countResult) {
-    die("Unable to count donations: " . $conn->error);
-}
-
-$totalDonationsCount = (int)$countResult
-    ->fetch_assoc()["total_count"];
-
-
-// =============================================
-// 3. TOTAL REGISTERED DONORS
-// =============================================
+// ==================================================
+// 2. TOTAL REGISTERED DONORS
+// ==================================================
 
 $donorCountResult = $conn->query(
-    "SELECT COUNT(*) AS total_donors
-     FROM donors"
+    "SELECT COUNT(*) AS total_donors FROM donors"
 );
 
 if (!$donorCountResult) {
@@ -56,10 +41,9 @@ if (!$donorCountResult) {
 $totalDonors = (int)$donorCountResult
     ->fetch_assoc()["total_donors"];
 
-
-// =============================================
-// 4. TOTAL REGISTERED BENEFICIARIES
-// =============================================
+// ==================================================
+// 3. TOTAL REGISTERED BENEFICIARIES
+// ==================================================
 
 $beneficiaryCountResult = $conn->query(
     "SELECT COUNT(*) AS total_beneficiaries
@@ -73,10 +57,9 @@ if (!$beneficiaryCountResult) {
 $totalBeneficiaries = (int)$beneficiaryCountResult
     ->fetch_assoc()["total_beneficiaries"];
 
-
-// =============================================
-// 5. TOTAL ONGOING PROJECTS
-// =============================================
+// ==================================================
+// 4. TOTAL ONGOING PROJECTS
+// ==================================================
 
 $projectCountResult = $conn->query(
     "SELECT COUNT(*) AS total_projects
@@ -91,10 +74,51 @@ if (!$projectCountResult) {
 $totalActiveProjects = (int)$projectCountResult
     ->fetch_assoc()["total_projects"];
 
+// ==================================================
+// 5. TOTAL REGISTERED VOLUNTEERS
+// ==================================================
 
-// =============================================
-// 6. FOUR MOST RECENT DONATIONS
-// =============================================
+$volunteerCountResult = $conn->query(
+    "SELECT COUNT(*) AS total_volunteers
+     FROM volunteers"
+);
+
+if (!$volunteerCountResult) {
+    die("Unable to count volunteers: " . $conn->error);
+}
+
+$totalVolunteers = (int)$volunteerCountResult
+    ->fetch_assoc()["total_volunteers"];
+
+// ==================================================
+// 6. TOTAL EXPENSES AND EXPENSE COUNT
+// ==================================================
+
+$expenseResult = $conn->query(
+    "SELECT
+        COALESCE(SUM(amount), 0) AS total_expenses,
+        COUNT(*) AS total_records
+     FROM expenses"
+);
+
+if (!$expenseResult) {
+    die("Unable to load expenses. Please confirm that the expenses table exists: " . $conn->error);
+}
+
+$expenseData = $expenseResult->fetch_assoc();
+
+$totalExpenses = (float)$expenseData["total_expenses"];
+$totalExpenseRecords = (int)$expenseData["total_records"];
+
+// ==================================================
+// 7. AVAILABLE BALANCE
+// ==================================================
+
+$availableBalance = $totalAmount - $totalExpenses;
+
+// ==================================================
+// 8. FOUR MOST RECENT DONATIONS
+// ==================================================
 
 $donationResult = $conn->query(
     "SELECT donor_name, amount, donation_date, status
@@ -113,6 +137,39 @@ while ($row = $donationResult->fetch_assoc()) {
     $donations[] = $row;
 }
 
+// ==================================================
+// 9. FOUR MOST RECENT EXPENSES
+// ==================================================
+
+$recentExpenseResult = $conn->query(
+    "SELECT expense_title, category, amount, expense_date
+     FROM expenses
+     ORDER BY id DESC
+     LIMIT 4"
+);
+
+if (!$recentExpenseResult) {
+    die("Unable to load recent expenses: " . $conn->error);
+}
+
+$recentExpenses = [];
+
+while ($row = $recentExpenseResult->fetch_assoc()) {
+    $recentExpenses[] = $row;
+}
+
+// ==================================================
+// 10. SAFE HTML OUTPUT FUNCTION
+// ==================================================
+
+function e($value) {
+    return htmlspecialchars(
+        (string)($value ?? ""),
+        ENT_QUOTES,
+        "UTF-8"
+    );
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -122,7 +179,8 @@ while ($row = $donationResult->fetch_assoc()) {
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
 
     <title>CHARITY HUB | Dashboard</title>
 
@@ -134,7 +192,6 @@ while ($row = $donationResult->fetch_assoc()) {
 <body>
 
 <div class="dashboard-container">
-
 
     <!-- =====================================
          SIDEBAR
@@ -150,9 +207,7 @@ while ($row = $donationResult->fetch_assoc()) {
 
         </div>
 
-
         <p class="menu-heading">MAIN MENU</p>
-
 
         <nav class="navigation">
 
@@ -186,23 +241,42 @@ while ($row = $donationResult->fetch_assoc()) {
                 Volunteers
             </a>
 
-            <a href="reports.php" class="nav-link">
+            <!-- NEW EXPENSES MODULE -->
+
+            <a href="expenses.php" class="nav-link">
                 <span>▤</span>
-                Reports
+                Expenses
             </a>
+
+            <!-- REPORTS MODULE -->
+
+            <a href="reports.php" class="nav-link">
+                <span>▥</span>
+                Reports and Analytics
+            </a>
+
+            <!-- SETTINGS -->
 
             <a href="settings.php" class="nav-link">
                 <span>⚙</span>
                 Settings
             </a>
 
+            <!-- USER MANAGEMENT -->
+
             <a href="users.php" class="nav-link">
                 <span>♙</span>
                 User Management
             </a>
 
-        </nav>
+            <!-- LOGOUT -->
 
+            <a href="logout.php" class="nav-link">
+                <span>↪</span>
+                Logout
+            </a>
+
+        </nav>
 
         <div class="sidebar-footer">
 
@@ -215,13 +289,11 @@ while ($row = $donationResult->fetch_assoc()) {
     </aside>
 
 
-
     <!-- =====================================
          MAIN CONTENT
     ====================================== -->
 
     <main class="main-content">
-
 
         <!-- TOPBAR -->
 
@@ -236,7 +308,6 @@ while ($row = $donationResult->fetch_assoc()) {
                 </p>
 
             </div>
-
 
             <div class="admin-profile">
 
@@ -257,13 +328,11 @@ while ($row = $donationResult->fetch_assoc()) {
         </header>
 
 
-
         <!-- =====================================
              DASHBOARD CONTENT
         ====================================== -->
 
         <section class="content">
-
 
             <!-- PAGE HEADING -->
 
@@ -280,7 +349,6 @@ while ($row = $donationResult->fetch_assoc()) {
 
                 </div>
 
-
                 <div class="today-date">
 
                     <?php echo date("d M Y"); ?>
@@ -290,13 +358,11 @@ while ($row = $donationResult->fetch_assoc()) {
             </div>
 
 
-
             <!-- =====================================
                  STATISTICS CARDS
             ====================================== -->
 
             <div class="stats-grid">
-
 
                 <!-- TOTAL DONATIONS -->
 
@@ -328,7 +394,6 @@ while ($row = $donationResult->fetch_assoc()) {
                 </div>
 
 
-
                 <!-- TOTAL DONORS -->
 
                 <div class="stat-card">
@@ -354,7 +419,6 @@ while ($row = $donationResult->fetch_assoc()) {
                     </p>
 
                 </div>
-
 
 
                 <!-- TOTAL BENEFICIARIES -->
@@ -384,7 +448,6 @@ while ($row = $donationResult->fetch_assoc()) {
                 </div>
 
 
-
                 <!-- ACTIVE PROJECTS -->
 
                 <div class="stat-card">
@@ -412,8 +475,90 @@ while ($row = $donationResult->fetch_assoc()) {
                 </div>
 
 
-            </div>
+                <!-- TOTAL VOLUNTEERS -->
 
+                <div class="stat-card">
+
+                    <div class="stat-top">
+
+                        <span class="stat-title">
+                            Total Volunteers
+                        </span>
+
+                        <span class="stat-icon">
+                            ♧
+                        </span>
+
+                    </div>
+
+                    <h2>
+                        <?php echo number_format($totalVolunteers); ?>
+                    </h2>
+
+                    <p>
+                        Registered volunteers
+                    </p>
+
+                </div>
+
+
+                <!-- TOTAL EXPENSES -->
+
+                <div class="stat-card">
+
+                    <div class="stat-top">
+
+                        <span class="stat-title">
+                            Total Expenses
+                        </span>
+
+                        <span class="stat-icon">
+                            ▤
+                        </span>
+
+                    </div>
+
+                    <h2>
+                        KSh <?php echo number_format($totalExpenses, 2); ?>
+                    </h2>
+
+                    <p>
+                        <?php echo number_format($totalExpenseRecords); ?>
+                        expense records
+                    </p>
+
+                </div>
+
+
+                <!-- AVAILABLE BALANCE -->
+
+                <div class="stat-card">
+
+                    <div class="stat-top">
+
+                        <span class="stat-title">
+                            Available Balance
+                        </span>
+
+                        <span class="stat-icon">
+                            $
+                        </span>
+
+                    </div>
+
+                    <h2>
+                        KSh <?php
+                        echo number_format($availableBalance, 2);
+                        ?>
+                    </h2>
+
+                    <p>
+                        Donations minus recorded expenses
+                    </p>
+
+                </div>
+
+            </div>
 
 
             <!-- =====================================
@@ -422,11 +567,9 @@ while ($row = $donationResult->fetch_assoc()) {
 
             <div class="dashboard-grid">
 
-
                 <!-- RECENT DONATIONS TABLE -->
 
                 <section class="panel">
-
 
                     <div class="panel-heading">
 
@@ -440,7 +583,6 @@ while ($row = $donationResult->fetch_assoc()) {
 
                         </div>
 
-
                         <a href="donations.php">
 
                             <button
@@ -453,7 +595,6 @@ while ($row = $donationResult->fetch_assoc()) {
                         </a>
 
                     </div>
-
 
 
                     <div class="table-container">
@@ -476,7 +617,6 @@ while ($row = $donationResult->fetch_assoc()) {
 
                             </thead>
 
-
                             <tbody>
 
                                 <?php if (count($donations) > 0): ?>
@@ -486,35 +626,17 @@ while ($row = $donationResult->fetch_assoc()) {
                                         <tr>
 
                                             <td>
-
-                                                <?php
-
-                                                echo htmlspecialchars(
-                                                    $donation["donor_name"] ?? "",
-                                                    ENT_QUOTES,
-                                                    "UTF-8"
-                                                );
-
-                                                ?>
-
+                                                <?php echo e($donation["donor_name"]); ?>
                                             </td>
 
-
                                             <td>
-
-                                                KSh
-
-                                                <?php
-
+                                                KSh <?php
                                                 echo number_format(
                                                     (float)$donation["amount"],
                                                     2
                                                 );
-
                                                 ?>
-
                                             </td>
-
 
                                             <td>
 
@@ -532,34 +654,20 @@ while ($row = $donationResult->fetch_assoc()) {
 
                                             </td>
 
-
                                             <td>
-
-                                                <?php
-
-                                                echo htmlspecialchars(
-                                                    $donation["status"] ?? "Pending",
-                                                    ENT_QUOTES,
-                                                    "UTF-8"
-                                                );
-
-                                                ?>
-
+                                                <?php echo e($donation["status"] ?? "Pending"); ?>
                                             </td>
 
                                         </tr>
 
                                     <?php endforeach; ?>
 
-
                                 <?php else: ?>
 
                                     <tr>
 
                                         <td colspan="4">
-
                                             No donation records available yet.
-
                                         </td>
 
                                     </tr>
@@ -572,15 +680,128 @@ while ($row = $donationResult->fetch_assoc()) {
 
                     </div>
 
-
                 </section>
 
+
+                <!-- RECENT EXPENSES TABLE -->
+
+                <section class="panel">
+
+                    <div class="panel-heading">
+
+                        <div>
+
+                            <h3>Recent Expenses</h3>
+
+                            <p>
+                                Overview of the latest expenditure
+                            </p>
+
+                        </div>
+
+                        <a href="expenses.php">
+
+                            <button
+                                class="view-button"
+                                type="button"
+                            >
+                                View All
+                            </button>
+
+                        </a>
+
+                    </div>
+
+
+                    <div class="table-container">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Expense</th>
+
+                                    <th>Category</th>
+
+                                    <th>Amount</th>
+
+                                    <th>Date</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                <?php if (count($recentExpenses) > 0): ?>
+
+                                    <?php foreach ($recentExpenses as $expense): ?>
+
+                                        <tr>
+
+                                            <td>
+                                                <?php echo e($expense["expense_title"]); ?>
+                                            </td>
+
+                                            <td>
+                                                <?php echo e($expense["category"]); ?>
+                                            </td>
+
+                                            <td>
+                                                KSh <?php
+                                                echo number_format(
+                                                    (float)$expense["amount"],
+                                                    2
+                                                );
+                                                ?>
+                                            </td>
+
+                                            <td>
+
+                                                <?php
+
+                                                $expenseDate = $expense["expense_date"] ?? "";
+
+                                                $expenseTimestamp = strtotime($expenseDate);
+
+                                                echo $expenseTimestamp
+                                                    ? date("d M Y", $expenseTimestamp)
+                                                    : "N/A";
+
+                                                ?>
+
+                                            </td>
+
+                                        </tr>
+
+                                    <?php endforeach; ?>
+
+                                <?php else: ?>
+
+                                    <tr>
+
+                                        <td colspan="4">
+                                            No expense records available yet.
+                                        </td>
+
+                                    </tr>
+
+                                <?php endif; ?>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
 
 
                 <!-- RECENT ACTIVITIES -->
 
                 <section class="panel">
-
 
                     <div class="panel-heading">
 
@@ -589,7 +810,7 @@ while ($row = $donationResult->fetch_assoc()) {
                             <h3>Recent Activities</h3>
 
                             <p>
-                                Latest system activities
+                                CHARITY HUB system modules
                             </p>
 
                         </div>
@@ -597,9 +818,7 @@ while ($row = $donationResult->fetch_assoc()) {
                     </div>
 
 
-
                     <div class="activity-list">
-
 
                         <div class="activity-item">
 
@@ -656,14 +875,43 @@ while ($row = $donationResult->fetch_assoc()) {
                         </div>
 
 
-                    </div>
+                        <div class="activity-item">
 
+                            <span class="activity-dot"></span>
+
+                            <p>
+                                Volunteer management is available.
+                            </p>
+
+                        </div>
+
+
+                        <div class="activity-item">
+
+                            <span class="activity-dot"></span>
+
+                            <p>
+                                Expenses management is available.
+                            </p>
+
+                        </div>
+
+
+                        <div class="activity-item">
+
+                            <span class="activity-dot"></span>
+
+                            <p>
+                                Reports and analytics are available.
+                            </p>
+
+                        </div>
+
+                    </div>
 
                 </section>
 
-
             </div>
-
 
 
             <!-- =====================================
