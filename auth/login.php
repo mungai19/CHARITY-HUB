@@ -60,13 +60,5 @@ $pageTitle = 'Log in';
       <button class="btn btn-block btn-lg" type="submit">Log in</button>
     </form>
     <p class="switch">New here? <a href="<?= url('auth/register.php') ?>"><b>Create an account</b></a></p>
-    <div class="demo"><b>Demo accounts</b> (password for all: <b>Password@123</b>)
-      <table>
-        <tr><td>Admin</td><td>admin@charityhub.org</td></tr>
-        <tr><td>Organization</td><td>org@charityhub.org</td></tr>
-        <tr><td>Donor</td><td>donor@charityhub.org</td></tr>
-        <tr><td>Volunteer</td><td>volunteer@charityhub.org</td></tr>
-        <tr><td>Beneficiary</td><td>beneficiary@charityhub.org</td></tr>
-      </table></div>
   </div></div>
 </div></body></html>
