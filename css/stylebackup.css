@@ -1,0 +1,316 @@
+
+/* ==========================================
+   CHARITY HUB - MAIN SYSTEM STYLING
+========================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f4f6f9;
+    color: #333;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background: #163b35;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 25px 15px;
+    color: white;
+    overflow-y: auto;
+}
+
+.sidebar h2 {
+    text-align: center;
+    margin-bottom: 35px;
+    font-size: 23px;
+    color: white;
+    letter-spacing: 1px;
+}
+
+.sidebar a {
+    display: block;
+    padding: 14px;
+    margin-bottom: 10px;
+    color: white;
+    text-decoration: none;
+    border-radius: 7px;
+    transition: 0.3s;
+    font-size: 15px;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+    background: #2d7161;
+}
+
+/* MAIN CONTENT */
+
+.main-content {
+    margin-left: 250px;
+    padding: 30px;
+    min-height: 100vh;
+}
+
+/* HEADER */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.header h1 {
+    color: #163b35;
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.header p {
+    color: #777;
+    font-size: 14px;
+}
+
+/* GENERAL CARDS */
+
+.card,
+.form-container,
+.table-container,
+.content-card {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    margin-bottom: 25px;
+}
+
+.card h3 {
+    color: #777;
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+.card h2 {
+    color: #163b35;
+    font-size: 28px;
+}
+
+/* FORM STYLING */
+
+.form-container h2,
+.table-container h2,
+.content-card h2 {
+    color: #163b35;
+    margin-bottom: 20px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #26745f;
+    box-shadow: 0 0 4px rgba(38,116,95,0.2);
+}
+
+.form-group textarea {
+    resize: vertical;
+}
+
+/* BUTTONS */
+
+button,
+.btn {
+    background: #26745f;
+    color: white;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 14px;
+    display: inline-block;
+    transition: 0.3s;
+}
+
+button:hover,
+.btn:hover {
+    background: #163b35;
+}
+
+/* TABLES */
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+    background: white;
+}
+
+table th,
+table td {
+    padding: 14px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+table th {
+    background: #f4f6f9;
+    color: #163b35;
+    font-weight: bold;
+}
+
+table tr:hover {
+    background: #f9fbfa;
+}
+
+/* ALERT MESSAGES */
+
+.message,
+.alert {
+    padding: 14px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+}
+
+.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* REPORTS */
+
+.report-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.report-card {
+    background: white;
+    padding: 22px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+}
+
+.report-card h3 {
+    color: #777;
+    margin-bottom: 12px;
+}
+
+.report-card h2 {
+    color: #163b35;
+}
+
+/* SETTINGS */
+
+.settings-section {
+    background: white;
+    padding: 25px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+}
+
+.settings-section h2 {
+    color: #163b35;
+    margin-bottom: 20px;
+}
+
+/* LINKS */
+
+.view-link {
+    display: inline-block;
+    margin-top: 15px;
+    color: #26745f;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.view-link:hover {
+    text-decoration: underline;
+}
+
+/* RESPONSIVE DESIGN */
+
+@media(max-width: 900px) {
+    .report-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media(max-width: 600px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+
+    .sidebar a {
+        display: inline-block;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 15px;
+    }
+
+    .form-grid,
+    .report-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header {
+        display: block;
+    }
+}
